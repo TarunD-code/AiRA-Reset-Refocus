@@ -43,7 +43,7 @@ test('CLI requires explicit local opt-in, profile acknowledgement and per-reques
 test('provider availability stays local, mock default, and Codex cannot be enabled by env', async () => {
   const local = readConfig({ ALLOW_CODEX_CLI: 'true', CODEX_CLI_PATH: '/trusted/codex', OPENAI_API_KEY: 'ignored' }, '.');
   assert.equal(local.key, '');
-  const providers = providerStatuses(local); assert.equal(providers[0].id, 'mock'); assert.equal(providers[3].enabled, false);
+  const providers = providerStatuses(local); assert.equal(providers[0].id, 'mock'); assert.equal(providers.find(p => p.id === 'codex-cli')?.enabled, false);
   await assert.rejects(codexTurn(), error => error.code === 'CODEX_RESTRICTION_UNVERIFIED');
 });
 test('CLI invocation is shell-free data, restricted arguments and a provider-specific model', () => {

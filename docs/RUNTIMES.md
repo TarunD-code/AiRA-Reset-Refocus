@@ -6,6 +6,10 @@ Every browser session starts in Mock. Selecting a provider alone does not invoke
 
 Copy `.env.example` to `.env`. Set `ALLOW_LIVE_API=true`, add a permitted `OPENAI_API_KEY`, and set `OPENAI_MODEL` to a model available to your account. Restart the app, select OpenAIAPI and consent to usage before sending. Keys stay on the server. This adapter uses the Responses endpoint with a structured reply envelope.
 
+## GeminiAPI
+
+Set `GEMINI_API_KEY` in `.env` (and optionally `GEMINI_MODEL`, defaulting to `gemini-2.5-flash`). Restart the app, select GeminiAPI and consent to usage before sending. Keys stay on the server. This adapter connects to the Gemini REST endpoint with a structured JSON schema response envelope.
+
 ## ClaudeCLI
 
 This adapter requires an installed official `claude` executable and an existing Claude-plan login. The implementation requires Claude Code 2.1.211 or later within major version 2, and checks its required flags and login before each request. Unsupported installations are rejected.

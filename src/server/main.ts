@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { fileURLToPath } from 'node:url';
 import { createApp, readConfig } from './app.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));

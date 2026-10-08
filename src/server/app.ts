@@ -10,6 +10,7 @@ import { ScreenDocument } from '../shared/openui/document.js';
 import { liveTurn, PublicError } from './provider.js';
 import { providerStatuses, type Config } from './config.js';
 import { claudeTurn, codexTurn } from './cli.js';
+import { geminiTurn } from './gemini.js';
 import { type ProcessTransport } from './subprocess.js';
 import { redactValue } from '../shared/redact.js';
 export { readConfig } from './config.js';
@@ -72,6 +73,10 @@ export function createApp(config: Config, transport: typeof fetch = fetch, cliTr
           } else if (input.provider === 'claude-cli') {
             const result = await claudeTurn(input, skill, config.claude, controller.signal, cliTransport, cliResolver);
             turn = result.turn; versions.returnedModel = result.returnedModel; versions.runtimeVersion = result.runtimeVersion; versions.restrictionProfile = result.restrictionProfile;
+          } else if (input.provider === 'gemini-api') {
+            if (!config.geminiKey) throw new PublicError('CONFIG', 'Gemini API key is not configured.', 403);
+            const result = await geminiTurn(input, skill, { key: config.geminiKey, model: config.geminiModel }, controller.signal, transport);
+            turn = result.turn; versions.returnedModel = result.returnedModel;
           } else {
             if (!config.allowLive || !config.key) throw new PublicError('CONFIG', 'Live access is not enabled.', 403);
             const result = await liveTurn(input, skill, { key: config.key, model: config.model }, controller.signal, transport);
