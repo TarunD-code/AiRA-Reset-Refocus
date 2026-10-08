@@ -11,20 +11,34 @@ export function getGeminiApiKey(): string | undefined {
 
 export type GeminiConfig = { key: string; model: string };
 
-export async function geminiTurn(
+function isTransientError(error: unknown): boolean {
+  if (error instanceof PublicError) {
+    return error.code === 'PROVIDER' || error.code === 'NETWORK' || error.status === 503 || error.status === 429 || error.status >= 500;
+  }
+  const msg = error instanceof Error ? error.message : String(error);
+  return (
+    msg.includes('503') ||
+    msg.includes('429') ||
+    msg.includes('500') ||
+    msg.includes('502') ||
+    msg.includes('504') ||
+    msg.includes('Service Unavailable') ||
+    msg.includes('Too Many Requests') ||
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('overloaded') ||
+    msg.includes('high demand') ||
+    msg.includes('temporarily unavailable')
+  );
+}
+
+async function execTurnForModel(
+  modelName: string,
   request: RequestData,
   skill: string,
-  config: GeminiConfig,
+  apiKey: string,
   signal: AbortSignal,
-  transport: typeof fetch = fetch
-): Promise<{ turn: Turn; returnedModel: string | null }> {
-  const apiKey = config.key || getGeminiApiKey();
-  if (!apiKey) {
-    throw new PublicError('CONFIG', 'GEMINI_API_KEY is not configured in local environment.', 403);
-  }
-
-  const modelName = config.model || 'gemini-3.5-flash';
-
+  transport: typeof fetch
+): Promise<Turn> {
   if (transport !== fetch) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const lastMessage = request.messages.at(-1)?.content ?? '';
@@ -58,10 +72,10 @@ export async function geminiTurn(
     if (!response.ok) {
       const message = response.status === 401 || response.status === 403
         ? 'The Gemini API key was rejected. Check the local .env file.'
-        : response.status === 429
-        ? 'Gemini rate or quota limit was reached. Check your account before retrying.'
+        : response.status === 429 || response.status === 503
+        ? `Gemini API returned status ${response.status}.`
         : 'The Gemini request failed. Check model access and local configuration.';
-      throw new PublicError('PROVIDER', message);
+      throw new PublicError('PROVIDER', message, response.status);
     }
     let data: any;
     try { data = await response.json() as any; }
@@ -72,7 +86,7 @@ export async function geminiTurn(
     try { parsed = JSON.parse(rawText); }
     catch { throw new PublicError('SCHEMA', 'Gemini response did not match component schema. Retry this turn.'); }
     if (!isTurn(parsed)) throw new PublicError('SCHEMA', 'Gemini response did not match component schema. Retry this turn.');
-    return { turn: parsed, returnedModel: modelName };
+    return parsed;
   }
 
   try {
@@ -123,17 +137,71 @@ export async function geminiTurn(
       throw new PublicError('SCHEMA', 'Gemini response did not match component schema. Retry this turn.');
     }
 
-    return { turn: parsed, returnedModel: modelName };
+    return parsed;
   } catch (error) {
     if (error instanceof PublicError) throw error;
     if (signal.aborted) throw new PublicError('CANCELLED', 'The request was cancelled or timed out. Retry if needed.', 408);
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes('401') || msg.includes('403') || msg.includes('API key') || msg.includes('API_KEY_INVALID')) {
-      throw new PublicError('PROVIDER', 'The Gemini API key was rejected. Check the local .env file.');
+      throw new PublicError('PROVIDER', 'The Gemini API key was rejected. Check the local .env file.', 401);
     }
     if (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) {
-      throw new PublicError('PROVIDER', 'Gemini rate or quota limit was reached. Check your account before retrying.');
+      throw new PublicError('PROVIDER', 'Gemini rate or quota limit was reached. Check your account before retrying.', 429);
+    }
+    if (msg.includes('503') || msg.includes('Service Unavailable') || msg.includes('overloaded')) {
+      throw new PublicError('PROVIDER', 'Gemini service unavailable (503).', 503);
     }
     throw new PublicError('PROVIDER', `Gemini request failed: ${msg}`);
   }
+}
+
+export async function geminiTurn(
+  request: RequestData,
+  skill: string,
+  config: GeminiConfig,
+  signal: AbortSignal,
+  transport: typeof fetch = fetch
+): Promise<{ turn: Turn; returnedModel: string | null }> {
+  const apiKey = config.key || getGeminiApiKey();
+  if (!apiKey) {
+    throw new PublicError('CONFIG', 'GEMINI_API_KEY is not configured in local environment.', 403);
+  }
+
+  const primaryModel = config.model || 'gemini-3.5-flash';
+  const fallbacks = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  const modelsToTry = [primaryModel, ...fallbacks.filter(m => m !== primaryModel)];
+
+  let lastError: unknown;
+
+  for (const modelName of modelsToTry) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      if (signal.aborted) {
+        throw new PublicError('CANCELLED', 'The request was cancelled or timed out. Retry if needed.', 408);
+      }
+      try {
+        const turn = await execTurnForModel(modelName, request, skill, apiKey, signal, transport);
+        return { turn, returnedModel: modelName };
+      } catch (err) {
+        lastError = err;
+        if (signal.aborted) {
+          throw new PublicError('CANCELLED', 'The request was cancelled or timed out. Retry if needed.', 408);
+        }
+        if (!isTransientError(err)) {
+          throw err;
+        }
+        if (attempt < 3) {
+          const delayMs = 1000 * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+  }
+
+  if (lastError instanceof PublicError) {
+    throw lastError;
+  }
+  throw new PublicError(
+    'PROVIDER',
+    'Gemini service is currently unavailable due to high demand. Please try again in a few moments.'
+  );
 }
