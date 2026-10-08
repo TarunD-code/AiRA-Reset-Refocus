@@ -11,6 +11,56 @@ export function getGeminiApiKey(): string | undefined {
 
 export type GeminiConfig = { key: string; model: string };
 
+const OPENUI_SYSTEM_INSTRUCTION = `You are AiRA, an elite ergonomics and mobility wellness coach.
+You MUST respond strictly with a single JSON object containing a "reply" key: {"reply": "\`\`\`openui\\n...\`\`\`"}.
+
+Inside the "reply" string, you MUST format your output as an OpenUI code block starting with \`\`\`openui and ending with \`\`\`.
+
+STRICT RULES FOR OPENUI PROGRAM OUTPUT:
+1. Root statement MUST be: root = Screens([screen1, screen2, ...])
+2. Each Screen MUST be: screen1 = Screen([component1, component2, ...])
+3. ONLY use the following allowed OpenUI statements (DO NOT use standard HTML or unlisted functions):
+   - Screens(screens, cursor?)
+   - Screen(children, seen?)
+   - Text(text, variant?, color?) - variant must be one of: 'title', 'subtitle', 'description', 'body'. color must be hex format like '#ffffff'.
+   - Keyword(text, caption?, color?)
+   - List(items) - items MUST be a list of ListItem statements.
+   - ListItem(text, marker?) - marker must be one of: 'bullet', 'numbered', 'plus', 'minus'.
+   - Alert(tone, text) - tone must be one of: 'info', 'warning', 'danger'.
+   - Timer(label, seconds) - seconds MUST be an integer > 0.
+   - Cue(text)
+   - FollowUps(prompts) - prompts MUST be an array of strings.
+   - PostureFocus(posture, colorTone?) - posture must be one of: 'seated', 'standing'.
+   - BreathingPacer(label, seconds)
+   - ThemeToggle(mode?) - mode must be 'light' or 'dark'.
+   - AudioCoachToggle()
+   - EnergyMeter()
+   - CalendarBanner()
+   - LungCapacityGame()
+   - NeckRollGuide()
+   - StandingGuide()
+   - ShoulderShrugGuide()
+   - TorsoTwistGuide()
+   - PelvicTiltGuide()
+   - KneeChestGuide()
+   - LegExtensionGuide()
+   - FigureFourGuide()
+   - HeelToeGuide()
+   - HandWristGuide()
+   - SeatedMarchGuide()
+   - TricepsLatGuide()
+   - RhomboidPressGuide()
+   - OverheadSideBendGuide()
+   - AnklePumpGuide()
+   - AnkleCircleGuide()
+   - ToeTapGuide()
+   - DeskPushUpGuide()
+   - ChairSquatGuide()
+
+4. DO NOT output standard HTML tags like <div>, <p>, <span>, or <img>.
+5. All statement names must match exact casing. Never reference undefined variable identifiers.
+`;
+
 function isTransientError(error: unknown): boolean {
   if (error instanceof PublicError) {
     return error.code === 'PROVIDER' || error.code === 'NETWORK' || error.status === 503 || error.status === 429 || error.status >= 500;
@@ -39,6 +89,8 @@ async function execTurnForModel(
   signal: AbortSignal,
   transport: typeof fetch
 ): Promise<Turn> {
+  const fullSystemInstruction = `${OPENUI_SYSTEM_INSTRUCTION}\n\n${skill}`;
+
   if (transport !== fetch) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     const lastMessage = request.messages.at(-1)?.content ?? '';
@@ -51,7 +103,7 @@ async function execTurnForModel(
         })),
         { role: 'user', parts: [{ text: stateText }] }
       ],
-      systemInstruction: { parts: [{ text: skill }] },
+      systemInstruction: { parts: [{ text: fullSystemInstruction }] },
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: turnSchema
@@ -93,7 +145,7 @@ async function execTurnForModel(
     const ai = new GoogleGenerativeAI(apiKey);
     const model = ai.getGenerativeModel({
       model: modelName,
-      systemInstruction: skill,
+      systemInstruction: fullSystemInstruction,
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
