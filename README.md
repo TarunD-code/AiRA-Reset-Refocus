@@ -2,13 +2,13 @@
 
 > **Adaptive Mobility, Ergonomics & Focus Coach for Software Engineers**
 
-**AiRA** (Reset & Refocus) is an elite, developer-first mobility, ergonomics, and wellness application engineered specifically for remote software engineers to combat screen fatigue, repetitive strain injuries (RSI), and cognitive burnout. By combining adaptive micro-break mobility routines, real-time posture focus indicators, gamified breathwork capacity tests, ambient cognitive load tracking, smart calendar conflict detection, and global theme customization, AiRA seamlessly fits into a software engineer's daily coding workflow without breaking focus.
+**AiRA** (Reset & Refocus) is an elite, developer-first mobility, ergonomics, and wellness application engineered specifically for remote software engineers to combat screen fatigue, repetitive strain injuries (RSI), and cognitive burnout. By combining adaptive micro-break mobility routines, real-time posture focus indicators, gamified breathwork capacity tests, ambient cognitive load tracking, smart calendar conflict detection, multi-model AI runtime integration, and global theme customization, AiRA seamlessly fits into a software engineer's daily coding workflow without breaking focus.
 
 ---
 
 ## 🏗️ Core Architecture & Technology Stack
 
-AiRA is built on a high-throughput, declarative **OpenUI** framework featuring a deterministic state-machine server architecture paired with a trusted client-side DOM rendering engine:
+AiRA is built on a high-throughput, declarative **OpenUI** framework featuring a deterministic state-machine server architecture paired with a trusted client-side DOM rendering engine and multi-provider AI runtime support:
 
 ```
 ┌────────────────────────────────┐                 OpenUI Statements                 ┌──────────────────────────────────┐
@@ -24,6 +24,8 @@ AiRA is built on a high-throughput, declarative **OpenUI** framework featuring a
 ```
 
 - **State-Machine Server Architecture ([`src/server/mock.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/server/mock.ts)):** Manages deterministic interaction state flows, routing seamlessly across Welcome, Adaptive Mobility Queue, Military Lung Capacity Test, Calendar Interruption, Pre-meeting Grounding, and Session Summary screens with state-preserving reset handling.
+- **Multi-Runtime Integration Engine ([`src/server/gemini.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/server/gemini.ts), `provider.ts`, `cli.ts`):** Robust multi-provider request router supporting `Mock`, `OpenAIAPI`, `ClaudeCLI`, and official `GeminiAPI` (`@google/generative-ai` SDK).
+  - **Gemini Engine:** Built on `@google/generative-ai` SDK supporting Google's new `AQ.` key format. Targets `gemini-3.5-flash` natively with `application/json` structured response schemas, system instruction OpenUI component signature enforcement, 3-step exponential backoff retries (1s, 2s, 4s), and automated model fallback (`gemini-2.5-flash`, `gemini-1.5-flash`) to guarantee resilience during high demand.
 - **Declarative OpenUI Library ([`src/shared/openui/openui-library.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/shared/openui/openui-library.ts)):** Defines strict statement signatures, parameter expectations, required arguments, and child node hierarchy rules for all OpenUI interface elements.
 - **Strict Schema Validator ([`src/shared/openui/validate.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/shared/openui/validate.ts)):** Enforces payload safety, structural constraints, data type validation, and prop checking prior to client DOM instantiation.
 - **Modular Custom OpenUI Component Library ([`src/web/components.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/web/components.ts)):** Transforms validated OpenUI abstract syntax trees (AST) into high-performance native HTML DOM nodes with Web Animations API micro-interactions, standardized full-body avatar renderers, and strict CSS layout containment.
@@ -161,12 +163,18 @@ The upcoming feature pipeline for **AiRA** focuses on expanding workspace integr
    npm ci --ignore-scripts
    ```
 
-2. **Start Development Server:**
+2. **Configure Environment (Optional for Gemini AI Runtime):**
+   Create a `.env` file in the project root to enable Gemini API mode:
+   ```env
+   GEMINI_API_KEY="your_api_key_here"
+   ```
+
+3. **Start Development Server:**
    ```sh
    npm start
    ```
 
-3. **Access Local App:**
+4. **Access Local App:**
    Open [http://127.0.0.1:4319](http://127.0.0.1:4319) in your browser.
 
 ### Quality Verification Commands
@@ -187,10 +195,13 @@ npm run build
 
 ---
 
-## 🧪 Tested Runtime Modes
+## 🧪 Tested Runtime Modes & Provider Support
 
-The following runtime modes were verified:
-- **Mock Server Harness (`src/server/mock.ts`):** Fully tested via interactive HTTP transport and deterministic state machine flow.
+The application supports flexible local and cloud runtime modes:
+- **Mock Server Harness ([`src/server/mock.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/server/mock.ts)):** Fully tested via interactive HTTP transport and deterministic state machine flow (starts by default, requiring zero external keys).
+- **GeminiAPI Runtime ([`src/server/gemini.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/server/gemini.ts)):** Integrated via official `@google/generative-ai` SDK. Supports new `AQ.` API key formats, strict JSON schema output matching OpenUI signatures, 3-stage exponential backoff for `503/429` congestion, and model fallbacks (`gemini-3.5-flash` → `gemini-2.5-flash` → `gemini-1.5-flash`).
+- **OpenAIAPI Runtime ([`src/server/provider.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/server/provider.ts)):** Integrates via OpenAI Responses endpoint with structured reply envelope.
+- **ClaudeCLI Runtime ([`src/server/cli.ts`](file:///d:/All%20Documents/task/AIAIRA/Aira/workout-starter/src/server/cli.ts)):** Subprocess-isolated Claude CLI integration with strict flag restrictions and profile safety.
 - **TypeScript Static Typecheck (`npm run typecheck`):** Verified clean with 0 errors (`tsc --noEmit`).
 - **Safety Linter (`npm run lint`):** Verified clean with no unsafe dynamic code, trailing whitespace, or unescaped HTML injection.
-- **Node Contract Test Suite (`npm test` / `tests/core.test.mjs`):** 16/16 core tests passed 100% for parser, server mock, serializing, document AST, component contracts, and timer store.
+- **Node Contract & HTTP Test Suite (`npm test`):** All core unit tests and HTTP transport tests passing 100%.
