@@ -136,6 +136,18 @@ AiRA eliminates developer context switching through **zero-typing interaction fl
 
 ---
 
+## 🚀 Future Enhancements & Roadmap
+
+The upcoming feature pipeline for **AiRA** focuses on expanding workspace integration, biometric telemetry, local AI privacy, multiplayer team routines, and long-term health analytics:
+
+1. **IDE & Workspace Integration:** Development of native VS Code, Cursor, and JetBrains extensions to embed the ambient energy meter, posture reminders, and micro-break prompts directly within the code editor status bar and activity bar, eliminating browser context switching entirely.
+2. **Wearable & Biometric Syncing:** Direct API integration with Apple Health, Google Fit, Whoop, and Oura Ring to transition the predictive energy meter into a live physiological dashboard driven by real-time Heart Rate Variability (HRV), resting heart rate, and stress telemetry.
+3. **Local LLM Support for Enterprise Privacy:** Support for offline AI model processing via Ollama (e.g., Llama 3, Mistral, Phind) to enable enterprise developers operating under strict NDAs, regulated environments, or air-gapped networks to utilize the wellness coach locally without cloud API dependencies.
+4. **Engineering Team "Sync Breaks":** A multiplayer team mode featuring Slack and Microsoft Teams app integrations to trigger synchronized 2-minute mobility breaks for engineering pods following intense sprint planning sessions, incident retrospectives, or pull-request reviews.
+5. **Analytics Dashboard & Health Progression:** A comprehensive data visualization suite tracking user mobility streaks, lung capacity progression, posture focus compliance, and micro-break completion over time, complete with automated CSV and PDF exports for healthcare professionals, ergonomics advisors, and physical therapists.
+
+---
+
 ## 🚀 Quick Start & Quality Verification Suite
 
 ### Prerequisites
