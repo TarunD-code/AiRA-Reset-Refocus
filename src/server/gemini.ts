@@ -23,7 +23,7 @@ export async function geminiTurn(
     throw new PublicError('CONFIG', 'GEMINI_API_KEY is not configured in local environment.', 403);
   }
 
-  const modelName = config.model || 'gemini-1.5-flash';
+  const modelName = config.model || 'gemini-3.5-flash';
 
   if (transport !== fetch) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;

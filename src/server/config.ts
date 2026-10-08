@@ -12,7 +12,7 @@ export function readConfig(env: NodeJS.ProcessEnv, root: string): Config {
   if (env.APP_MODE === 'live' && (env.ALLOW_LIVE_API !== 'true' || !env.OPENAI_API_KEY)) throw new Error('Live mode requires ALLOW_LIVE_API=true and OPENAI_API_KEY in your local environment.');
   const allowLive = env.ALLOW_LIVE_API === 'true';
   const geminiKey = env.GEMINI_API_KEY ?? process.env.GEMINI_API_KEY ?? '';
-  return { root, key: allowLive ? (env.OPENAI_API_KEY ?? '') : '', model: model(env.OPENAI_MODEL, 'gpt-6-luna', 'OPENAI_MODEL'), geminiKey, geminiModel: model(env.GEMINI_MODEL, 'gemini-1.5-flash', 'GEMINI_MODEL'), allowLive,
+  return { root, key: allowLive ? (env.OPENAI_API_KEY ?? '') : '', model: model(env.OPENAI_MODEL, 'gpt-6-luna', 'OPENAI_MODEL'), geminiKey, geminiModel: model(env.GEMINI_MODEL, 'gemini-3.5-flash', 'GEMINI_MODEL'), allowLive,
     claude: { enabled: env.ALLOW_CLAUDE_CLI === 'true', profileAcknowledged: env.CLI_PROFILE_ACKNOWLEDGED === 'true', binary: env.CLAUDE_CLI_PATH ?? '', model: model(env.CLAUDE_MODEL, '', 'CLAUDE_MODEL'), timeoutMs: 45_000 } };
 }
 export function providerStatuses(config: Config): ProviderStatus[] {
